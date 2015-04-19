@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 '''
+
 USAGE: 
 $ python sequence_recall.py
 
+DEPENDENCIES:
+template.py
+
 FILE STRUCTURE:
+
 /
     sequence_recall.py
     template.py
@@ -17,19 +22,20 @@ FILE STRUCTURE:
                               .
                               .
 
-This file should be located in the same directory as the SeqRec_master/ dir,
-which contains the audio files to be played in the experiment. Also, template.py
-should be in the same dir as this script, which holds the patterns of how to 
-create the different sequences of audio stims. If there is no pre-existing 
-SeqRec_Master/ dir, then running the script as shown above will configure a 
-correct (but empty) file structure. The user then must fill in those empty files
-with audio stims.
+This script should be located in the same directory as the SeqRec_master/ dir
+and template.py. The template.py script holds the patterns of how to create 
+the sequences of audio stims to be played. These sequences come from Dupoux et
+al (2001). If there is no pre-existing SeqRec_Master/ dir, running this script 
+as shown in USAGE will configure a correct (but empty) file structure. The user
+then must fill in those empty dirs with audio stims.
 
 As of now, my filenames for the audio files are of the form: 
-<condition>_<speaker>_<tokenNumber>_<A|B>.wav -- as in -- kupo_erica_1_A.wav
+    <condition>_<speaker>_<tokenNumber>_<A|B>.wav 
+    e.g. kupo_erica_1_A.wav
+
 '''
 
-from template import templateList
+from template import templateList                                               # from template.py
 from psychopy import visual, event, sound, core                                 # Visual displays prompts, event gets keypresses, 
                                                                                 # sound plays WAVs, core will shut us down
 import os                                                                       # for listing contents of a directory
