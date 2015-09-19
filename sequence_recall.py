@@ -29,18 +29,27 @@ al (2001). If there is no pre-existing SeqRec_Master/ dir, running this script
 as shown in USAGE will configure a correct (but empty) file structure. The user
 then must fill in those empty dirs with audio stims.
 
-As of now, my filenames for the audio files are of the form: 
+Filenames for the audio files should be of the form: 
     <condition>_<speaker>_<tokenNumber>_<A|B>.wav 
     e.g. kupo_erica_1_A.wav
 
 '''
 
-from template import templateList                                               # from template.py
-from psychopy import visual, event, sound, core                                 # Visual displays prompts, event gets keypresses, 
-                                                                                # sound plays WAVs, core will shut us down
-import os                                                                       # for listing contents of a directory
-import re                                                                       # for regex
-import random                                                                   # helps us ranomize stimuli presentation
+# from template.py
+from template import templateList
+
+# Visual displays prompts, event gets keypresses,  sound plays WAVs, core will
+# shut us down
+from psychopy import visual, event, sound, core
+
+# For listing contents of a directory
+import os
+
+# for regex
+import re
+
+# helps us ranomize stimuli presentation
+import random
 import sys
 import numpy
 
@@ -49,22 +58,15 @@ import numpy
 
 class Seqrec():
     def __init__(self):
-        self.templateList=templateList
-        self.displayRes= [800,800]                                      
-        self.speakers= ["_erica_","_josh_","_van_"]                             # My WAV stimuli were recorded by 3 speakers, 
-                                                                                # this helps randomize them when we compile sequences
+        self.templateList = templateList
+        self.displayRes = [800,800]                                      
+        self.speakers = ["_erica_","_josh_","_van_"]
         #self.contrastList=[["gabo","gaabo"],["pyko","poeko"],["mipa","mipa"],
         #                                     ["guna","gunya"],["kupo","kuvo"]]
-        self.contrastList=[["kupo","kuvo"]]                                     # testing list
-        self.responses=[]
-        self.win = visual.Window(self.displayRes, fullscr=False, units="pix", 
-                                 allowGUI=True,winType="pyglet")                # create the display window for the experiment 
-                                                                                # (an object called 'win') with all the info it needs
-        self.check_dir()
-        self.run_experiment()
-        self.win.close()
-        sys.exit()
+        self.contrastList = [["kupo","kuvo"]]
+        self.responses = []
 
+        
     def check_dir(self):
         if not os.path.exists("SeqRec_master/"):                                # Check if the directory SeqRec_master/ exists, 
                                                                                 # if it doesn't, this loop creates it
@@ -96,25 +98,28 @@ class Seqrec():
         assert type(AorB)==str                                                  # Make sure AorB is actually "A" or "B"
         smallList = []                                                          # A list we first dump all our paths to, 
                                                                                 # makes sorting easier
-        self.bigList = []
+        bigList = []
         i=0
         try:
+            # loop through all the WAVs in a folder
             for path in os.listdir("SeqRec_master/audio_stims/" + item + "_" 
-                                   + AorB + "/"):                                   # loop through all the WAVs in a folder
-                    smallList.append(path)                                          # append each of those WAVs to smallList
+                                   + AorB + "/"):
+                    smallList.append(path)
         except OSError:
             print "ERROR: folder of audio files not found"
             self.win.close()
             sys.exit()
 
-        for speaker in self.speakers:                                           # This loop is how we keep speakers separate
-            self.bigList.append([])
+        # This loop is how we keep speakers separate
+        for speaker in self.speakers:
+            bigList.append([])
             for WAVpath in smallList:
                 if speaker in WAVpath:
-                    self.bigList[i].append("SeqRec_master/audio_stims/" + 
+                    bigList[i].append("SeqRec_master/audio_stims/" + 
                                            item + "_" + AorB + "/" + WAVpath)   # Only append those WAVs which contain the speaker 
                                                                                 # name in the path
             i+=1
+        return bigList
 
     
     def display_prompt(self, prompt, displayTime=30):                           # Putting text on the screen, it needs window, 
@@ -209,31 +214,47 @@ class Seqrec():
             if len(seq)==7:
                 self.token_6.append(seq)
     
-    def familiarization_task(self, keyPress):                                   # we need a key press to evaluate, and if we collect 
-                                                                                # it outside the function, we can have the function 
-                                                                                # in an infinite loop that the participant can break
-        if keyPress == ["left"]:                                                # check if they pressed the left arrow
-            WAVlist=self.a                                                      # set WAVlist to the 'a' tokens (this whole task 
-                                                                                # relies on the 'a' and 'b' distinction, can be 
-                                                                                # thought of as 'cat' and 'dog' like before)
-            pos=[-300,0]
-        if keyPress == ["right"]:                                               # check if they pressed the right arrow
-            WAVlist=self.b                                                      # set the WAVlist to the 'b' tokens 
-            pos=[300,0]
-        speaker= random.choice(range(len(self.AandB_Paths[1])))                 # pick a random speaker
-        token= random.choice(range(len(self.AandB_Paths[1][1])))                # pick a random token
-        WAV = WAVlist[speaker][token]                                           # assign the actual path to WAV
-        my_sound= sound.Sound(value=WAV, sampleRate=44100, bits=16, name='', 
-                              autoLog=True)                                     # create a sound object with the audio stimulus WAV
-        my_sound.play()                                                         # play the sound
+    def familiarization_task(self, keyPress):
+        '''
+        when the participant presses a key, play the corresponding stimulus
+        '''
+        
+        # check if participant pressed the left arrow
+        if keyPress == ["left"]:
+            # set WAVlist to the 'a' tokens 
+            WAVlist = self.a
+            # set the position of the circle to be shown on left side of screen
+            pos = [-300,0]
+        if keyPress == ["right"]:
+            WAVlist = self.b
+            pos = [300,0]
+
+        # pick a random speaker
+        speaker = random.choice(range(len(self.AandB_Paths[1])))
+        # pick a random token
+        token = random.choice(range(len(self.AandB_Paths[1][1])))
+        # get the path of the given WAV file
+        WAV = WAVlist[speaker][token]
+        # create a sound object
+        mySound = sound.Sound(value=WAV,sampleRate=44100,bits=16,autoLog=True)
+        # play the sound
+        mySound.play()
+
+        # put up the circle on the screen for a little while
         for frameN in range(20):
             myStim = visual.GratingStim(self.win, tex=None, mask="gauss", 
                                         size=300, color = "green", pos=pos)
             myStim.draw()           
             self.win.flip()
         self.win.flip()
+        
     
-    def testing_phase(self, isi=.6, testCutoff=7, i=0):                         # isi = inter-stimulus interval
+    def testing_phase(self, isi=.6, testCutoff=7, i=0):
+        '''
+        Participant must correctly identify a given number of stimuli
+        in a row to proceed. A circle is desplayed to participant to 
+        indicate progress.
+        '''
         outerCircle = visual.Circle(self.win, radius = 280, edges = 64,
                                     lineColor="green", fillColor="green")
         innerCircle = visual.Circle(self.win, radius = 280, edges = 64,
@@ -326,17 +347,23 @@ class Seqrec():
                                                                                 # the globally defined levelList (one per level)
     
     def run_experiment(self):
-        for i in self.contrastList:                                             # Now we've passed our safety checks, pick a contrast
+        # Now we've passed our safety checks, pick a contrast and run it!
+        for i in self.contrastList:
             print i
-                                                                                # and run it!
-            itemA = i[0]                                                        # assign the A item
-            itemB = i[1]                                                        # assign the B item
-            self.WAV_folder_to_List("A", itemA)                                 # pull out all A stimuli
-            self.a=self.bigList                                                 # and assign them to list a
-            self.WAV_folder_to_List("B", itemB)                                 # pull out all B stimuli
-            self.b=self.bigList                                                 # and assign them to list b
-            self.AandB_Paths=[self.a,self.b]                                    # make our super list of a and b paths
-            self.display_prompt("press either a or b")                          # begin familiarzation with prompt
+            # assign the A item as first in tuple
+            itemA = i[0]
+            # assign the B item as second
+            itemB = i[1]
+            
+            # pull out all A stimuli and assign them to list 'a'
+            self.a = self.WAV_folder_to_List("A", itemA)
+            # pull out all B stimuli and assign them to list 'b'
+            self.b = self.WAV_folder_to_List("B", itemB)
+            # make our super list of a and b paths
+            self.AandB_Paths=[self.a,self.b]
+
+            # begin familiarzation with prompt
+            self.display_prompt("press either a or b")
             core.wait(1)
             #
             while 1:
@@ -365,7 +392,21 @@ class Seqrec():
             self.responses.append(self.contrastList)
 
         with open('results.txt','a') as f:
-            for item in self.responses:
-                f.write("%s\n" % item)
+            for level in self.responses[0]:
+                for sequence in level:
+                    f.write("%s\n" % sequence)
 
-expObj = Seqrec()
+                
+    def run(self):
+        # create the display window for the experiment
+        self.win = visual.Window(self.displayRes, fullscr=False, units="pix", 
+                                 allowGUI=True,winType="pyglet") 
+        self.check_dir()
+        self.run_experiment()
+        self.win.close()
+        sys.exit()
+
+
+if __name__ == "__main__":
+    S = Seqrec()
+    S.run()
