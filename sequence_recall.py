@@ -68,31 +68,39 @@ class Seqrec():
 
         
     def check_dir(self):
-        if not os.path.exists("SeqRec_master/"):                                # Check if the directory SeqRec_master/ exists, 
-                                                                                # if it doesn't, this loop creates it
-            for contrast in self.contrastList:                                  # loop through the contrasts you filled in the 
-                                                                                # variable section (self.contrastList)
-                os.makedirs("SeqRec_master/audio_stims/" + contrast[0] + "_A/") # make a subfolder for the A contrast
-                os.makedirs("SeqRec_master/audio_stims/" + contrast[1] + "_B/") # make a subfolder for the B contrast
+        # if the dir SeqRec_master/ doesn't exist, create it!
+        if not os.path.exists("SeqRec_master/"):
+            # loop through the contrasts provided
+            for contrast in self.contrastList:
+                # make subfolders for the two words of contrast (A and B)
+                os.makedirs("SeqRec_master/audio_stims/" + contrast[0] + "_A/")
+                os.makedirs("SeqRec_master/audio_stims/" + contrast[1] + "_B/")
+                
+            # Tell the experimenter to put the audio files in folders
             self.display_prompt("ERROR: Put audio files in correct folders", 
-                                displayTime=100)                                # give the experimenter an error message
+                                displayTime=100)
             self.display_prompt("Find folders in SeqRec_master/audio_stims/",
-                                displayTime=100)                                # Show where the subfolders are
-            sys.exit()                                                          # exit the python interpreter
+                                displayTime=100)
+            # exit the python interpreter
+            sys.exit()
+            
         else:
-            for subfolder in os.listdir("SeqRec_master/audio_stims/"):          # This loop checks to see there is something (should 
-                                                                                # be WAV files) in the subfolders of /audio_stims/
-                if os.path.isdir("SeqRec_master/audio_stims/" + subfolder):     # make sure we are look into directories, not files
-                    if os.listdir("SeqRec_master/audio_stims/"+subfolder)==[]:  # if the subfolder is empty
+            # check if files (hopefully audio stims) in /audio_stims/
+            for subfolder in os.listdir("SeqRec_master/audio_stims/"):
+                if os.path.isdir("SeqRec_master/audio_stims/" + subfolder):
+                    # if some subfolder is empty
+                    if os.listdir("SeqRec_master/audio_stims/"+subfolder)==[]:
+                        # display error
                         self.display_prompt("ERROR: Please put audio files" + 
-                                        "in correct folders", displayTime=100)  # display error
+                                        "in correct folders", displayTime=100)
                         self.display_prompt("At least one subfolder is empty", 
-                                            displayTime=100)                    # more error
+                                            displayTime=100)
                         self.display_prompt(("Find folders here >>> " + 
                                              str("SeqRec_master/audio_stims/")),
-                                            displayTime=100)                    # show where folders are
+                                            displayTime=100)
                         sys.exit()
-    
+
+                        
     def WAV_folder_to_List(self, AorB, item):                                   # This looks in a folder, takes out all the WAVs 
                                                                                 # we want, and assigns them to a list
         assert type(AorB)==str                                                  # Make sure AorB is actually "A" or "B"
