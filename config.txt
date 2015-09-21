@@ -1,2 +1,0 @@
-speakers	['josh', 'van']
-contrasts	[['kupo', 'kuvo']]
