@@ -37,41 +37,74 @@ Filenames for the audio files should be of the form:
 
 # from template.py
 from template import templateList
-
-# Visual displays prompts, event gets keypresses,  sound plays WAVs, core will
+# visual displays prompts, event gets keypresses, sound plays WAVs, core will
 # shut us down
 from psychopy import visual, event, sound, core
-
 # For listing contents of a directory
 import os
-
 # for regex
 import re
-
 # helps us ranomize stimuli presentation
 import random
 import sys
 import numpy
-
+# ast will convert string to python code for our config() function
+import ast
 
 
 
 class Seqrec():
     def __init__(self):
+        self.config()
         self.templateList = templateList
-        self.displayRes = [800,800]                                      
-        self.speakers = ["_erica_","_josh_","_van_"]
-        #self.contrastList=[["gabo","gaabo"],["pyko","poeko"],["mipa","mipa"],
-        #                                     ["guna","gunya"],["kupo","kuvo"]]
-        self.contrastList = [["kupo","kuvo"]]
+        self.displayRes = [800,800]
         self.responses = []
+
+
+    def config(self):
+        if os.path.isfile('config.txt'): 
+            with open('config.txt') as f:
+                lines = f.readlines()
+
+            for line in lines:
+                label,values = line.strip().split('\t')
+                if label == 'contrasts':
+                    self.contrasts = ast.literal_eval(values)
+                elif label == 'speakers':
+                    self.speakers = ast.literal_eval(values)
+        else:
+            speakers=[]
+            numSpeakers = raw_input("How many speakers do you have for each stimulus? Enter a number here: ")
+            for i in range(1,int(numSpeakers)+1):
+                speakers.append(raw_input("Please type in speaker " +str(i)+
+                            " here, as it appears in your audio filenames :  "))
+                print '\n'
+
+            contrasts=[]
+            numContrasts = raw_input("How many sound contrasts do you have? Enter a number here: ")
+            for i in range(1,int(numContrasts)+1):
+                contrast=[]
+                contrast.append(raw_input("Please type in first word for contrast " +str(i)+
+                            " here, as it appears in your audio filenames :  "))
+                contrast.append(raw_input("Please type in second word for contrast " +str(i)+
+                            " here, as it appears in your audio filenames :  "))
+                contrasts.append(contrast)
+                print '\n'
+            self.speakers = speakers
+            self.contrasts = contrasts
+
+            configFile = open('config.txt', 'w')
+            print >> configFile, 'speakers\t' + str(speakers)
+            print >> configFile, 'contrasts\t' + str(contrasts)
+                
+                    
 
         
     def check_dir(self):
         # if the dir SeqRec_master/ doesn't exist, create it!
         if not os.path.exists("SeqRec_master/"):
             # loop through the contrasts provided
-            for contrast in self.contrastList:
+            for contrast in self.contrasts:
                 # make subfolders for the two words of contrast (A and B)
                 os.makedirs("SeqRec_master/audio_stims/" + contrast[0] + "_A/")
                 os.makedirs("SeqRec_master/audio_stims/" + contrast[1] + "_B/")
@@ -356,7 +389,7 @@ class Seqrec():
     
     def run_experiment(self):
         # Now we've passed our safety checks, pick a contrast and run it!
-        for i in self.contrastList:
+        for i in self.contrasts:
             print i
             # assign the A item as first in tuple
             itemA = i[0]
@@ -396,8 +429,7 @@ class Seqrec():
             token3List = self.levelList
             core.wait(1)
             #
-            self.contrastList = [token2List,token3List]                         # create a master list out of all the level lists
-            self.responses.append(self.contrastList)
+            self.responses.append([token2List,token3List])
 
         with open('results.txt','a') as f:
             for level in self.responses[0]:

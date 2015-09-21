@@ -1,0 +1,2 @@
+contrasts	[["kupo","kuvo"]]
+speakers	["_josh_","_erica_","_van_"]
