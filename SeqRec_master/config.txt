@@ -1,5 +1,5 @@
 speakers	['josh', 'van']
-contrasts	[['mipa', 'mipa']]
-testCutOff	['2']
+contrasts	[['kupo', 'kuvo']]
+testCutOff	['9']
 testISI	['.1']
 mainISI	['.1']
