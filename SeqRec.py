@@ -57,7 +57,6 @@ import ast
 class SeqRec():
     def __init__(self):
         self.config()
-        self.templateList = templateList
         self.displayRes = [800,800]
         self.responses = []
 
@@ -275,7 +274,7 @@ class SeqRec():
             self.win.close()
             sys.exit()
     
-    def create_sequences(self):
+    def create_sequences(self, AandB_Paths, templateList):
         listOfPaths=[]
         # these speaker and token variables shuffle our WAV paths
         speakerA=0
@@ -284,13 +283,13 @@ class SeqRec():
         tokenB=0
         currentSequence=0
         # pick a character string of type "A_A_B_A" out of the template list
-        for seqName in self.templateList:
+        for seqName in templateList:
             listOfPaths.append([seqName])
             # this walks down the template string character by character
             for char in seqName:
                 if char == "A":
                     # This makes sure we don't index out of the list. 
-                    if speakerA == len(self.AandB_Paths)-1:
+                    if speakerA == len(AandB_Paths)-1:
                         # reset speaker counter and start on new set of tokens
                         # for example, if we we already iterated through all the
                         # second tokens for all the speakers, we need to move on
@@ -299,31 +298,31 @@ class SeqRec():
                     else:
                         speakerA += 1
                     # if we're out of range for tokens, reset counter
-                    if tokenA == len(self.AandB_Paths[0][0])-1:
+                    if tokenA == len(AandB_Paths[0][0])-1:
                         tokenA = 0
                     else:
                         tokenA += 1
                     # we append the WAV file to listOfPaths
                     listOfPaths[currentSequence].append(
-                        self.AandB_Paths[0][speakerA][tokenA])
+                        AandB_Paths[0][speakerA][tokenA])
 
                 if char == "B":
-                    if speakerB == len(self.AandB_Paths)-1:
+                    if speakerB == len(AandB_Paths)-1:
                         speakerB = 0
                     else:
                         speakerB += 1
-                    if tokenB == len(self.AandB_Paths[0][0])-1:
+                    if tokenB == len(AandB_Paths[0][0])-1:
                         tokenB = 0
                     else:
                         tokenB += 1
                     listOfPaths[currentSequence].append(
-                        self.AandB_Paths[1][speakerB][tokenB])
+                        AandB_Paths[1][speakerB][tokenB])
             currentSequence += 1
-        self.token_2=[]
-        self.token_3=[]
-        self.token_4=[]
-        self.token_5=[]
-        self.token_6=[]
+        token_2=[]
+        token_3=[]
+        token_4=[]
+        token_5=[]
+        token_6=[]
         for seq in listOfPaths:
             # This loop passes through sequences, and tells us how long they are
             # Then we assign them  to their appropriate level list so they can
@@ -333,18 +332,19 @@ class SeqRec():
             # becuase it is just a character string of type
             # "A_A_B_A_B", which was our template
             if len(seq)==3:
-                self.token_2.append(seq[1:])
+                token_2.append(seq[1:])
             if len(seq)==4:
-                self.token_3.append(seq[1:])
+                token_3.append(seq[1:])
             if len(seq)==5:
-                self.token_4.append(seq[1:])
+                token_4.append(seq[1:])
             if len(seq)==6:
-                self.token_5.append(seq[1:])
+                token_5.append(seq[1:])
             if len(seq)==7:
-                self.token_6.append(seq[1:])
+                token_6.append(seq[1:])
+        return token_2, token_3, token_4, token_5, token_6
 
                 
-    def familiarization_task(self, keyPress):
+    def familiarization_task(self, keyPress, AandB_Paths):
         '''
         when the participant presses a key, play the corresponding stimulus
         '''
@@ -352,19 +352,19 @@ class SeqRec():
         # check if participant pressed the left arrow
         if keyPress == ["left"]:
             # set WAVlist to the 'a' tokens 
-            WAVlist = self.a
+            AorB = 0
             # set the position of the circle to be shown on left side of screen
             pos = [-300,0]
         if keyPress == ["right"]:
-            WAVlist = self.b
+            AorB = 1
             pos = [300,0]
 
         # pick a random speaker
-        speaker = random.choice(range(len(self.AandB_Paths[1])))
+        speaker = random.choice(range(len(AandB_Paths[1])))
         # pick a random token
-        token = random.choice(range(len(self.AandB_Paths[1][1])))
+        token = random.choice(range(len(AandB_Paths[1][1])))
         # get the path of the given WAV file
-        WAV = WAVlist[speaker][token]
+        WAV = AandB_Paths[AorB][speaker][token]
         # create a sound object
         mySound = sound.Sound(value=WAV,sampleRate=44100,bits=16,autoLog=True)
         # play the sound
@@ -379,7 +379,7 @@ class SeqRec():
         self.win.flip()
         
     
-    def testing_phase(self):
+    def testing_phase(self, AandB_Paths):
         '''
         Participant must correctly identify a given number of stimuli
         in a row to proceed. A circle is desplayed to participant to 
@@ -405,13 +405,13 @@ class SeqRec():
                 innerCircle.draw()
                 self.win.flip()
             # pick randomly the list of 'A' or 'B' tokens
-            AorB = random.choice(range(len(self.AandB_Paths)))
+            AorB = random.choice(range(len(AandB_Paths)))
             # pick random speaker
-            speaker= random.choice(range(len(self.AandB_Paths[0])))
+            speaker= random.choice(range(len(AandB_Paths[0])))
             # pick random token
-            token= random.choice(range(len(self.AandB_Paths[0][0])))
+            token= random.choice(range(len(AandB_Paths[0][0])))
             # assign audio file path to object WAV
-            WAV = self.AandB_Paths[AorB][speaker][token]
+            WAV = AandB_Paths[AorB][speaker][token]
             # create the sound object with the audio stimulus WAV
             mySound= sound.Sound(value=WAV, sampleRate=44100, bits=16, name='',
                                   autoLog=True)
@@ -512,32 +512,36 @@ class SeqRec():
             # assign the B item as second
             itemB = i[1]
             
-            # pull out all A stimuli and assign them to list 'a'
-            self.a = self.WAV_folder_to_List("A", itemA)
-            # pull out all B stimuli and assign them to list 'b'
-            self.b = self.WAV_folder_to_List("B", itemB)
-            # make our super list of a and b paths
-            self.AandB_Paths=[self.a,self.b]
+            # pull out all A stimuli and assign them to list 'A' and 'B'
+            A = self.WAV_folder_to_List("A", itemA)
+            B = self.WAV_folder_to_List("B", itemB)
+            AandB_Paths=[A,B]
 
             # begin familiarzation with prompt
-            self.display_prompt("press either a or b")
-            core.wait(1)
+            self.display_prompt("press either A or B\nto hear different sounds")
+            core.wait(2)
             
             while 1:
-                keyPress = event.waitKeys()                                     # check for keypress here
-                if keyPress == ["space"]:                                       # participant can press spacebar to exit
-                    break                                                       # break from loop
-                else:                                                           # otherwise...
-                    self.familiarization_task(keyPress)                         # another stimulus for familiarization 
+                # wait for keypress
+                keyPress = event.waitKeys()
+                # participant can press spacebar to move on to testing
+                if keyPress == ["space"]:
+                    break
+                else:
+                    # they (hopefully) pressed either A or B, so play it
+                    self.familiarization_task(keyPress, AandB_Paths)
             core.wait(1)
-            #
-            self.testing_phase()						# run the testing phase
             
-            self.create_sequences()                                             # create sequences from our template and stimuli
-            self.display_prompt("listen to the sounds and push the buttons!")   # start sequence recall with prompt
+            # run the testing phase
+            self.testing_phase(AandB_Paths)
+
+            token_2,token_3,token_4,token_5,token_6 = self.create_sequences(
+                AandB_Paths, templateList)
+            
+            self.display_prompt("listen to the sounds and push the buttons!")
             core.wait(2)
-            #
-            for level in [self.token_2, self.token_3]:
+            
+            for level in [token_2,token_3]:
                 self.responses.append(self.play_one_level(level))
                 self.mario()
                 core.wait(1)
@@ -557,26 +561,14 @@ class SeqRec():
                            autoLog=True)
         G4 = sound.Sound(value=392.00, secs=.15, bits=16, name='',
                            autoLog=True)
-        E4.play()
-        core.wait(.16)
-
-        E4.play()
-        core.wait(.20)
-
-        E4.play()
-        core.wait(.3)
-
-        C4.play()
-        core.wait(.16)
-
-        E4.play()
-        core.wait(.3)
-
-        G4.play()
-        core.wait(.5)
-
-        G3.play()
-        core.wait(.4)
+        
+        E4.play(); core.wait(.16)
+        E4.play(); core.wait(.20)
+        E4.play(); core.wait(.3)
+        C4.play(); core.wait(.16)
+        E4.play(); core.wait(.3)
+        G4.play(); core.wait(.5)
+        G3.play(); core.wait(.4)
 
         
     def run(self):
