@@ -41,7 +41,7 @@ from template import templateList
 # visual displays prompts, event gets keypresses, sound plays WAVs, core will
 # shut us down
 from psychopy import visual, event, sound, core
-# For listing contents of a directory
+# For listing contents of a directory, manipulating filepaths
 import os
 # for regex
 import re
@@ -79,6 +79,8 @@ class SeqRec():
                         self.testISI = float(ast.literal_eval(values)[0])
                     elif label == 'mainISI':
                         self.mainISI = float(ast.literal_eval(values)[0])
+                    elif label == 'numForcedListens':
+                        self.numForcedListens = int(ast.literal_eval(values)[0])
             except:
                 print "ERROR: The config.txt file is not correctly formatted."
         else:
@@ -158,12 +160,19 @@ class SeqRec():
                             "\tEnter a number here, in seconds: ")]
         print '\n'
 
+        numForcedListens = [raw_input("How many stimuli would you like the\n"+
+                        "participant to be forced to hear at the beginning of\n"+
+                        "the experiment?\n"+
+                            "\tEnter an even number here: ")]
+        print '\n'
+
         configFile = open('SeqRec_master/config.txt', 'w')
         print >> configFile, 'speakers\t' + str(speakers)
         print >> configFile, 'contrasts\t' + str(contrasts)
         print >> configFile, 'testCutOff\t' + str(testCutOff)
         print >> configFile, 'testISI\t' + str(testISI)
         print >> configFile, 'mainISI\t' + str(mainISI)
+        print >> configFile, 'numForcedListens\t' + str(numForcedListens)
 
         print "Configuration complete!\n"
         print "You may restart the experiment now.\n"
@@ -273,74 +282,60 @@ class SeqRec():
             print "ERROR: audio files not found"
             self.win.close()
             sys.exit()
-    
+
+            
     def create_sequences(self, AandB_Paths, templateList):
-        listOfPaths=[]
-        # these speaker and token variables shuffle our WAV paths
-        speakerA=0
-        tokenA=0
-        speakerB=0
-        tokenB=0
+        # list to store our output
+        orderedWAVPaths = []
+        # make lists of indices of speakers and tokens
+        iSpeakers = range(len(AandB_Paths[0]))
+        iTokens = range(len(AandB_Paths[0][0]))
+        # initialize speaker variable just once
+        speaker=0
+        token=0
         currentSequence=0
         # pick a character string of type "A_A_B_A" out of the template list
         for seqName in templateList:
-            listOfPaths.append([seqName])
+            orderedWAVPaths.append([])
             # this walks down the template string character by character
             for char in seqName:
                 if char == "A":
-                    # This makes sure we don't index out of the list. 
-                    if speakerA == len(AandB_Paths)-1:
-                        # reset speaker counter and start on new set of tokens
-                        # for example, if we we already iterated through all the
-                        # second tokens for all the speakers, we need to move on
-                        # to the third token for each speaker. 
-                        speakerA = 0
-                    else:
-                        speakerA += 1
-                    # if we're out of range for tokens, reset counter
-                    if tokenA == len(AandB_Paths[0][0])-1:
-                        tokenA = 0
-                    else:
-                        tokenA += 1
-                    # we append the WAV file to listOfPaths
-                    listOfPaths[currentSequence].append(
-                        AandB_Paths[0][speakerA][tokenA])
-
-                if char == "B":
-                    if speakerB == len(AandB_Paths)-1:
-                        speakerB = 0
-                    else:
-                        speakerB += 1
-                    if tokenB == len(AandB_Paths[0][0])-1:
-                        tokenB = 0
-                    else:
-                        tokenB += 1
-                    listOfPaths[currentSequence].append(
-                        AandB_Paths[1][speakerB][tokenB])
+                    AorB = 0
+                elif char == "B":
+                    AorB = 1
+                else:
+                    AorB = None
+                    
+                if AorB != None:
+                    # randomly choose speaker after previous speaker is removed
+                    newSpeakers = [i for i in iSpeakers if i != speaker]
+                    speaker = random.choice(newSpeakers)
+                    # randomly choose token after previous token is removed
+                    newTokens = [i for i in iTokens if i != token]
+                    token = random.choice(newTokens)
+                    # append the WAV file to listOfPaths
+                    orderedWAVPaths[currentSequence].append(
+                        AandB_Paths[AorB][speaker][token])
             currentSequence += 1
-        token_2=[]
-        token_3=[]
-        token_4=[]
-        token_5=[]
-        token_6=[]
-        for seq in listOfPaths:
+
+        # initialize our lists for different levels
+        token_2=[]; token_3=[]; token_4=[]; token_5=[]; token_6=[]
+
+        for seq in orderedWAVPaths:
             # This loop passes through sequences, and tells us how long they are
-            # Then we assign them  to their appropriate level list so they can
+            # Then we assign them to their appropriate level list so they can
             # be played in order.
             # First the 2-token sequences, then 3, etc.
-            # We don't append the first item in the sequence
-            # becuase it is just a character string of type
-            # "A_A_B_A_B", which was our template
+            if len(seq)==2:
+                token_2.append(seq)
             if len(seq)==3:
-                token_2.append(seq[1:])
+                token_3.append(seq)
             if len(seq)==4:
-                token_3.append(seq[1:])
+                token_4.append(seq)
             if len(seq)==5:
-                token_4.append(seq[1:])
+                token_5.append(seq)
             if len(seq)==6:
-                token_5.append(seq[1:])
-            if len(seq)==7:
-                token_6.append(seq[1:])
+                token_6.append(seq)
         return token_2, token_3, token_4, token_5, token_6
 
                 
@@ -348,7 +343,9 @@ class SeqRec():
         '''
         when the participant presses a key, play the corresponding stimulus
         '''
-        
+        # get indexes for speakers and tokens
+        iSpeakers = range(len(AandB_Paths[0]))
+        iTokens = range(len(AandB_Paths[0][0]))
         # check if participant pressed the left arrow
         if keyPress == ["left"]:
             # set WAVlist to the 'a' tokens 
@@ -358,18 +355,16 @@ class SeqRec():
         if keyPress == ["right"]:
             AorB = 1
             pos = [300,0]
-
         # pick a random speaker
-        speaker = random.choice(range(len(AandB_Paths[1])))
+        speaker = random.choice(iSpeakers)
         # pick a random token
-        token = random.choice(range(len(AandB_Paths[1][1])))
+        token = random.choice(iTokens)
         # get the path of the given WAV file
         WAV = AandB_Paths[AorB][speaker][token]
         # create a sound object
         mySound = sound.Sound(value=WAV,sampleRate=44100,bits=16,autoLog=True)
         # play the sound
         mySound.play()
-
         # put up the circle on the screen for a little while
         for frameN in range(20):
             myStim = visual.GratingStim(self.win, tex=None, mask="gauss", 
@@ -471,28 +466,37 @@ class SeqRec():
         return responses
 
     
-    def collect_responses(self, _list, waitingTime):                            # After the participant hears the sequence of WAVs, 
-                                                                                # we want to collect and save some key presses
-        responses=[]                                                           # A list to collect responses and WAV paths for
-                                                                                # every sequence
+    def collect_responses(self, _list, waitingTime):
+        '''
+        After the participant hears the sequence of WAVs, we want to collect and
+        save their key presses and the name of the file they heard. This way
+        we will later be able to check whether or not any given answer was
+        correct.
+        '''
+        # A list to collect responses and WAV paths for every sequence
+        responses=[]
         boxes = [.15]*len(_list)
         i=0
-        for WAV in _list:                                                       # The loop that appends our WAV paths to oneSeqList
-            regexpr="/.*[.]wav"                                                 # The full path is unneccesary, so we just get the
-                                                                                # important info coded in filename (item and speaker)
-            matchObject = re.search(regexpr, WAV)                               # some regex magic
-            shortPath= matchObject.group()                                      # more regex magic which leads to a shortened path
+        for WAV in _list:
+            # full path is unneccesary - only save item and speaker
+            shortPath= os.path.basename(WAV)
             myTex = numpy.array([boxes])
             myStim = visual.GratingStim(self.win, tex=myTex, mask=None,
                                 size=[100*len(_list),50], color = "green")
             myStim.draw()
             self.win.flip()
-            timer = core.CountdownTimer(waitingTime)                            # Give the participants a time limit
-            while timer.getTime() > 0:                                          # Loop runs unless timelimit exceeded
-                keyPress = event.waitKeys()                                     # wait for keypress and save it to keyPress
-                responses.append([shortPath,keyPress[0]])                      # append the key press to the list
-                break                                                           # break from loop (without this you are stuck in 
-                                                                                # the loop until time runs out, even after key press)
+            # Give the participants a time limit to respond
+            timer = core.CountdownTimer(waitingTime)
+            # Loop runs unless timelimit exceeded
+            while timer.getTime() > 0:
+                # wait for keypress and save it
+                keyPress = event.waitKeys()
+                # append key press and WAV filename to the list
+                responses.append([shortPath,keyPress[0]])
+                # without 'break' you are stuck in loop even after a key press
+                break
+
+            # increment boxes on the screen to show progress for each keypress
             boxes[i]=1
             myTex = numpy.array([boxes])
             myStim = visual.GratingStim(self.win, tex=myTex, mask=None, 
@@ -506,20 +510,24 @@ class SeqRec():
     
     def run_experiment(self):
         # Now we've passed our safety checks, pick a contrast and run it!
-        for i in self.contrasts:
-            # assign the A item as first in tuple
-            itemA = i[0]
-            # assign the B item as second
-            itemB = i[1]
+        for contrast in self.contrasts:
             
             # pull out all A stimuli and assign them to list 'A' and 'B'
-            A = self.WAV_folder_to_List("A", itemA)
-            B = self.WAV_folder_to_List("B", itemB)
+            A = self.WAV_folder_to_List("A", contrast[0])
+            B = self.WAV_folder_to_List("B", contrast[1])
             AandB_Paths=[A,B]
 
+            forcedListens = ["left", "right"]*(self.numForcedListens/2)
+            random.shuffle(forcedListens)
+            
+            for i in forcedListens:
+                self.familiarization_task([i], AandB_Paths)
+                core.wait(.75)
+
             # begin familiarzation with prompt
-            self.display_prompt("press either A or B\nto hear different sounds")
-            core.wait(2)
+            self.display_prompt("press either A or B\nto hear different sounds",
+                                displayTime=60)
+            core.wait(.5)
             
             while 1:
                 # wait for keypress
@@ -561,7 +569,6 @@ class SeqRec():
                            autoLog=True)
         G4 = sound.Sound(value=392.00, secs=.15, bits=16, name='',
                            autoLog=True)
-        
         E4.play(); core.wait(.16)
         E4.play(); core.wait(.20)
         E4.play(); core.wait(.3)
