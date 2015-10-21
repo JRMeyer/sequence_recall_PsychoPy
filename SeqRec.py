@@ -597,7 +597,7 @@ class SeqRec():
 
             # RUN SEQREC
             allLevels = self.create_sequences(AandB_Paths, templateList)
-            for level in allLevels[:3]:
+            for level in allLevels[:1]:
                 self.responses.append(self.play_one_level(level))
                 self.mario()
                 self.display_prompt("Great job!", displayTime=70)

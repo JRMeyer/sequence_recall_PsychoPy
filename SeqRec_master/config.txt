@@ -1,6 +1,6 @@
 speakers	['josh', 'van', 'erica', 'miles']
-contrasts	[['guna', 'gunya']]
-testCutOff	['4']
+contrasts	[['guna', 'gunya'],['kupo', 'kuvo']]
+testCutOff	['7']
 testISI	['.1']
 mainISI	['.1']
 numForcedListens	['10']
