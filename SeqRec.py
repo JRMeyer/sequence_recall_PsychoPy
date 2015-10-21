@@ -336,7 +336,7 @@ class SeqRec():
                 token_5.append(seq)
             if len(seq)==6:
                 token_6.append(seq)
-        return token_2, token_3, token_4, token_5, token_6
+        return [token_2, token_3, token_4, token_5, token_6]
 
                 
     def familiarization_task(self, keyPress, AandB_Paths):
@@ -517,18 +517,33 @@ class SeqRec():
             B = self.WAV_folder_to_List("B", contrast[1])
             AandB_Paths=[A,B]
 
+            # FORCED LISTEN PROMPT
+            self.display_prompt("You will now hear two words...\n\n"+
+                                "Pay attention to what the words sound like.",
+                                displayTime=250)
+            core.wait(1)
+            
             forcedListens = ["left", "right"]*(self.numForcedListens/2)
             random.shuffle(forcedListens)
-            
+
+            # RUN FORCED LISTENS
             for i in forcedListens:
                 self.familiarization_task([i], AandB_Paths)
                 core.wait(.75)
 
-            # begin familiarzation with prompt
-            self.display_prompt("press either A or B\nto hear different sounds",
-                                displayTime=60)
+            # FAMILIARIZATION PROMPT
+            self.display_prompt("Time for some practice...\n\n"+
+                                "Press an arrow to hear a word.\n\n"+
+                                "When you are done,\n"+
+                                "press the SPACE bar.\n",
+                                displayTime=250)
             core.wait(.5)
-            
+
+            self.display_prompt("You may press an arrow now.",
+                                displayTime=100)
+            core.wait(.5)
+
+            # RUN FAMILIARIZATION
             while 1:
                 # wait for keypress
                 keyPress = event.waitKeys()
@@ -538,21 +553,58 @@ class SeqRec():
                 else:
                     # they (hopefully) pressed either A or B, so play it
                     self.familiarization_task(keyPress, AandB_Paths)
-            core.wait(1)
+
+
+            # TESTING PROMPT
+            self.display_prompt("Time for a little test...\n\n"+
+                                "When you hear a word,\n"+
+                                "press the correct arrow.\n\n"+
+                                "You need to get 7 correct in-a-row.\n",
+                                displayTime=250)
+            core.wait(.5)
+
+            self.display_prompt("You will hear words now.",
+                                displayTime=100)
+            core.wait(.5)
             
-            # run the testing phase
+            # RUN TESTING
             self.testing_phase(AandB_Paths)
 
-            token_2,token_3,token_4,token_5,token_6 = self.create_sequences(
-                AandB_Paths, templateList)
+
+            # SEQREC PROMPT
+            self.display_prompt("Congrats, you did it!", displayTime=100)
+            core.wait(.5)
+
+            self.display_prompt("Now it's time for the fun stuff!",
+                                displayTime=100)
+            core.wait(.5)
             
-            self.display_prompt("listen to the sounds and push the buttons!")
-            core.wait(2)
-            
-            for level in [token_2,token_3]:
+            self.display_prompt("You now will hear sequences\n"+
+                                "of these same two words,\n"+
+                                "and you have to remember their order.\n",
+                                displayTime=250)
+            core.wait(.5)
+
+            self.display_prompt("The sequence will play\n"+
+                                "and then you hear a beep",
+                                displayTime=200)
+            core.wait(.5)
+
+            self.display_prompt("After the beep, press the\n"+
+                                "arrows in the same sequence.",
+                                displayTime=200)
+            core.wait(.5)
+
+            # RUN SEQREC
+            allLevels = self.create_sequences(AandB_Paths, templateList)
+            for level in allLevels[:3]:
                 self.responses.append(self.play_one_level(level))
                 self.mario()
+                self.display_prompt("Great job!", displayTime=70)
                 core.wait(1)
+                
+            self.display_prompt("Time for some new words!", displayTime=100)
+            core.wait(.5)
 
         with open('results.txt','a') as f:
             for level in self.responses:
@@ -579,9 +631,12 @@ class SeqRec():
 
         
     def run(self):
-        # create the display window for the experiment
+        # test small screen
         self.win = visual.Window(self.displayRes, fullscr=False, units="pix", 
-                                 allowGUI=True,winType="pyglet") 
+                                 allowGUI=True,winType="pyglet")
+        # # create the display window for the experiment
+        # self.win = visual.Window(fullscr=True, units="pix", 
+                         # allowGUI=True,winType="pyglet") 
         self.check_dir()
         self.run_experiment()
         self.win.close()
