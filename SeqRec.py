@@ -40,7 +40,7 @@ Filenames for the audio files should be of the form:
 from template import templateList
 # visual displays prompts, event gets keypresses, sound plays WAVs, core will
 # shut us down
-from psychopy import visual, event, sound, core
+from psychopy import visual, event, sound, core, prefs
 # For listing contents of a directory, manipulating filepaths
 import os
 # for regex
@@ -53,9 +53,10 @@ import numpy
 import ast
 
 
-
 class SeqRec():
     def __init__(self):
+        # set our sound preferences
+        prefs.general['audioLib'] = ['pygame']
         self.config()
         self.displayRes = [800,800]
         self.responses = []
@@ -184,7 +185,7 @@ class SeqRec():
         
     def check_dir(self):
         # if the dir SeqRec_master/ doesn't exist, create it!
-        if not os.path.exists("SeqRec_master/"):
+        if not os.path.exists("SeqRec_master/audio_stims"):
             # loop through the contrasts provided
             for contrast in self.contrasts:
                 # make subfolders for the two words of contrast (A and B)
@@ -248,17 +249,22 @@ class SeqRec():
         return bigList
 
     
-    def display_prompt(self, prompt, displayTime=30):
+    def display_prompt(self, prompt, displayTime=30, selfPaced=True):
         '''
         Putting text on the screen. Function requires window, the text prompt,
         and how many frames we want window on screen
         '''
         # This loop draws and flips window each time around
-        for frameN in range(displayTime):
-            # actually draw the window
+        if selfPaced == True:
             visual.TextStim(self.win, text = prompt).draw()
-            # flip the window to the screen
             self.win.flip()
+            event.waitKeys()
+        else:
+            for frameN in range(displayTime):
+                # actually draw the window
+                visual.TextStim(self.win, text = prompt).draw()
+                # flip the window to the screen
+                self.win.flip()
         # flip to buffer, so we don't have text on screen indefinitely
         self.win.flip()
 
@@ -456,6 +462,7 @@ class SeqRec():
             E = sound.Sound(value="E", secs=.3, bits=16, name='',
                                autoLog=True)
             # actually play the beep
+            E.setVolume(.5)
             E.play()
             # wait to collect responses
             core.wait(E.getDuration())
@@ -517,10 +524,11 @@ class SeqRec():
             B = self.WAV_folder_to_List("B", contrast[1])
             AandB_Paths=[A,B]
 
-            # FORCED LISTEN PROMPT
+            # PROMPT FORCED LISTENS
             self.display_prompt("You will now hear two words...\n\n"+
-                                "Pay attention to what the words sound like.",
-                                displayTime=250)
+                                "Pay attention to what the words sound like.\n"+
+                                "\n\n\n\nPress SPACE to move on.",
+                                selfPaced=True)
             core.wait(1)
             
             forcedListens = ["left", "right"]*(self.numForcedListens/2)
@@ -531,16 +539,17 @@ class SeqRec():
                 self.familiarization_task([i], AandB_Paths)
                 core.wait(.75)
 
-            # FAMILIARIZATION PROMPT
+            # PROMPT FAMILIARIZATION
             self.display_prompt("Time for some practice...\n\n"+
-                                "Press an arrow to hear a word.\n\n"+
+                                "Press an arrow to hear a word.\n"+
                                 "When you are done,\n"+
-                                "press the SPACE bar.\n",
-                                displayTime=250)
+                                "press the SPACE bar.\n"+
+                                "\n\n\n\nPress SPACE to move on.",
+                                selfPaced=True)
             core.wait(.5)
 
-            self.display_prompt("You may press an arrow now.",
-                                displayTime=100)
+            self.display_prompt("Press either LEFT or RIGHT arrow.",
+                                displayTime=50,selfPaced=False)
             core.wait(.5)
 
             # RUN FAMILIARIZATION
@@ -555,55 +564,59 @@ class SeqRec():
                     self.familiarization_task(keyPress, AandB_Paths)
 
 
-            # TESTING PROMPT
+            # PROMPT TESTING
             self.display_prompt("Time for a little test...\n\n"+
                                 "When you hear a word,\n"+
                                 "press the correct arrow.\n\n"+
-                                "You need to get 7 correct in-a-row.\n",
-                                displayTime=250)
-            core.wait(.5)
-
-            self.display_prompt("You will hear words now.",
-                                displayTime=100)
+                                "You need to get 7 correct in-a-row.\n"+
+                                "\n\n\n\nPress SPACE to move on.",
+                                selfPaced=True)
             core.wait(.5)
             
             # RUN TESTING
             self.testing_phase(AandB_Paths)
 
 
-            # SEQREC PROMPT
-            self.display_prompt("Congrats, you did it!", displayTime=100)
+            # PROMPT SEQREC
+            self.display_prompt("Congrats, you did it!", displayTime=70,
+                                selfPaced=False)
             core.wait(.5)
 
             self.display_prompt("Now it's time for the fun stuff!",
-                                displayTime=100)
+                                displayTime=70, selfPaced=False)
             core.wait(.5)
             
             self.display_prompt("You now will hear sequences\n"+
                                 "of these same two words,\n"+
-                                "and you have to remember their order.\n",
-                                displayTime=250)
+                                "and you have to remember their order.\n"+
+                                "\n\n\n\nPress SPACE to move on.",
+                                selfPaced=True)
             core.wait(.5)
 
             self.display_prompt("The sequence will play\n"+
-                                "and then you hear a beep",
-                                displayTime=200)
+                                "and then you hear a beep"+
+                                "\n\n\n\nPress SPACE to move on.",
+                                selfPaced=True)
             core.wait(.5)
 
             self.display_prompt("After the beep, press the\n"+
-                                "arrows in the same sequence.",
-                                displayTime=200)
+                                "arrows in the same sequence."+
+                                "\n\n\n\nPress SPACE to move on.",
+                                selfPaced=True)
             core.wait(.5)
 
             # RUN SEQREC
             allLevels = self.create_sequences(AandB_Paths, templateList)
-            for level in allLevels[:1]:
+            for level in allLevels:
                 self.responses.append(self.play_one_level(level))
                 self.mario()
-                self.display_prompt("Great job!", displayTime=70)
+                self.display_prompt("Great job!", displayTime=70,
+                                    selfPaced=False)
                 core.wait(1)
                 
-            self.display_prompt("Time for some new words!", displayTime=100)
+            self.display_prompt("Time for some new words!"+
+                                "\n\n\n\nPress SPACE to move on.",
+                                selfPaced=True)
             core.wait(.5)
 
         with open('results.txt','a') as f:
@@ -621,6 +634,11 @@ class SeqRec():
                            autoLog=True)
         G4 = sound.Sound(value=392.00, secs=.15, bits=16, name='',
                            autoLog=True)
+        C4.setVolume(.5)
+        E4.setVolume(.5)
+        G3.setVolume(.5)
+        G4.setVolume(.5)
+        
         E4.play(); core.wait(.16)
         E4.play(); core.wait(.20)
         E4.play(); core.wait(.3)
@@ -634,9 +652,9 @@ class SeqRec():
         # test small screen
         self.win = visual.Window(self.displayRes, fullscr=False, units="pix", 
                                  allowGUI=True,winType="pyglet")
-        # # create the display window for the experiment
+        # create the display window for the experiment
         # self.win = visual.Window(fullscr=True, units="pix", 
-                         # allowGUI=True,winType="pyglet") 
+        #                  allowGUI=True,winType="pyglet") 
         self.check_dir()
         self.run_experiment()
         self.win.close()
