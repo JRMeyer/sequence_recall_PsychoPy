@@ -517,6 +517,12 @@ class SeqRec():
     
     def run_experiment(self):
         # Now we've passed our safety checks, pick a contrast and run it!
+        # First, randomize all contrasts except for the first, control contrast
+        contrast1 = [self.contrasts[0]]
+        contrastsRest = self.contrasts[1:]
+        random.shuffle(contrastsRest)
+        self.contrasts = contrast1 + contrastsRest
+        # using the control+random list, start the experiment
         for contrast in self.contrasts:
             
             # pull out all A stimuli and assign them to list 'A' and 'B'
