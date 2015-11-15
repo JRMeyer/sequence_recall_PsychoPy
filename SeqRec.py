@@ -32,7 +32,7 @@ then must fill in those empty dirs with audio stims.
 
 Filenames for the audio files should be of the form: 
     <condition>_<speaker>_<tokenNumber>_<A|B>.wav 
-    e.g. kupo_erica_1_A.wav
+    e.g. kupo_peter_1_A.wav
 
 '''
 
@@ -515,7 +515,7 @@ class SeqRec():
         self.win.flip()
         return responses
     
-    def run_experiment(self):
+    def run_experiment(self, participantID):
         # Now we've passed our safety checks, pick a contrast and run it!
         # First, randomize all contrasts except for the first, control contrast
         contrast1 = [self.contrasts[0]]
@@ -523,7 +523,7 @@ class SeqRec():
         random.shuffle(contrastsRest)
         self.contrasts = contrast1 + contrastsRest
         # using the control+random list, start the experiment
-        for contrast in self.contrasts:
+        for contrastIndex,contrast in enumerate(self.contrasts):
             
             # pull out all A stimuli and assign them to list 'A' and 'B'
             A = self.WAV_folder_to_List("A", contrast[0])
@@ -613,19 +613,24 @@ class SeqRec():
 
             # RUN SEQREC
             allLevels = self.create_sequences(AandB_Paths, templateList)
-            for level in allLevels:
+            for level in allLevels[:2]:
                 self.responses.append(self.play_one_level(level))
                 self.mario()
                 self.display_prompt("Great job!", displayTime=70,
                                     selfPaced=False)
                 core.wait(1)
-                
-            self.display_prompt("Time for some new words!"+
-                                "\n\n\n\nPress SPACE to move on.",
-                                selfPaced=True)
-            core.wait(.5)
 
-        with open('results.txt','a') as f:
+            if contrastIndex < (len(self.contrasts)-1):
+                self.display_prompt("Time for some new words!"+
+                                    "\n\n\n\nPress SPACE to move on.",
+                                    selfPaced=True)
+                core.wait(.5)
+            else:
+                # this displays at very end of experiment
+                self.display_prompt("You're all done!\nThanks for your Time!",
+                                    displayTime=70, selfPaced=False)
+
+        with open((str(participantID) + '_seqrec_results.txt'),'a') as f:
             for level in self.responses:
                 for sequence in level:
                     f.write("%s\n" % sequence)
@@ -655,14 +660,15 @@ class SeqRec():
 
         
     def run(self):
+        self.check_dir()
+        participantID = raw_input('Enter participant ID: ')
         # test small screen
         self.win = visual.Window(self.displayRes, fullscr=False, units="pix", 
                                  allowGUI=True,winType="pyglet")
         # create the display window for the experiment
         # self.win = visual.Window(fullscr=True, units="pix", 
         #                  allowGUI=True,winType="pyglet") 
-        self.check_dir()
-        self.run_experiment()
+        self.run_experiment(participantID)
         self.win.close()
         sys.exit()
 
