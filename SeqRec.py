@@ -51,7 +51,8 @@ import sys
 import numpy
 # ast will convert string to python code for our config() function
 import ast
-
+# get time of experiment
+from time import localtime, strftime
 
 class SeqRec():
     def __init__(self):
@@ -515,7 +516,7 @@ class SeqRec():
         self.win.flip()
         return responses
     
-    def run_experiment(self, participantID):
+    def run_experiment(self, ID, age, langs, dateAndtime, extraCreditInfo):
         # Now we've passed our safety checks, pick a contrast and run it!
         # First, randomize all contrasts except for the first, control contrast
         contrast1 = [self.contrasts[0]]
@@ -613,7 +614,7 @@ class SeqRec():
 
             # RUN SEQREC
             allLevels = self.create_sequences(AandB_Paths, templateList)
-            for level in allLevels[:2]:
+            for level in allLevels:
                 self.responses.append(self.play_one_level(level))
                 self.mario()
                 self.display_prompt("Great job!", displayTime=70,
@@ -630,7 +631,12 @@ class SeqRec():
                 self.display_prompt("You're all done!\nThanks for your Time!",
                                     displayTime=70, selfPaced=False)
 
-        with open((str(participantID) + '_seqrec_results.txt'),'a') as f:
+        with open((str(ID) + '_seqrec_results.txt'),'a') as f:
+            f.write(str(ID) +'\n')
+            f.write(str(age) +'\n')
+            f.write(str(langs) +'\n')
+            f.write(str(dateAndtime) +'\n')
+            f.write(str(extraCreditInfo) +'\n')
             for level in self.responses:
                 for sequence in level:
                     f.write("%s\n" % sequence)
@@ -661,14 +667,23 @@ class SeqRec():
         
     def run(self):
         self.check_dir()
-        participantID = raw_input('Enter participant ID: ')
-        # test small screen
-        self.win = visual.Window(self.displayRes, fullscr=False, units="pix", 
-                                 allowGUI=True,winType="pyglet")
-        # create the display window for the experiment
-        # self.win = visual.Window(fullscr=True, units="pix", 
-        #                  allowGUI=True,winType="pyglet") 
-        self.run_experiment(participantID)
+        dateAndtime = strftime("%Y-%m-%d %H:%M", localtime())
+        fullScreen = raw_input('FullScreen? Enter "true" or "false": ')
+        ID = raw_input('Enter participant ID: ')
+        age = raw_input('Enter participant age: ')
+        langs =raw_input("Enter participant's fluent languages (with commas): ")
+        extraCreditInfo =raw_input("Enter extra credit info: ")
+        
+        if fullScreen == 'false':
+            # test small screen
+            self.win = visual.Window(self.displayRes,fullscr=False,units="pix",
+                                     allowGUI=True,winType="pyglet")
+        elif fullScreen == 'true':
+            # create the display window for the experiment
+            self.win = visual.Window(fullscr=True, units="pix", 
+                                     allowGUI=True,winType="pyglet")
+        
+        self.run_experiment(ID,age,langs,dateAndtime,extraCreditInfo)
         self.win.close()
         sys.exit()
 
