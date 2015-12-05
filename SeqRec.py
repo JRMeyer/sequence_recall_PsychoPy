@@ -168,6 +168,9 @@ class SeqRec():
                             "\tEnter an even number here: ")]
         print '\n'
 
+        if not os.path.exists('SeqRec_master/'):
+            os.makedirs('SeqRec_master/')
+            
         configFile = open('SeqRec_master/config.txt', 'w')
         print >> configFile, 'speakers\t' + str(speakers)
         print >> configFile, 'contrasts\t' + str(contrasts)
@@ -185,8 +188,8 @@ class SeqRec():
 
         
     def check_dir(self):
-        # if the dir SeqRec_master/ doesn't exist, create it!
-        if not os.path.exists("SeqRec_master/audio_stims"):
+        # if the dir SeqRec_master/audio_stims/ doesn't exist, create it!
+        if not os.path.exists("SeqRec_master/audio_stims/"):
             # loop through the contrasts provided
             for contrast in self.contrasts:
                 # make subfolders for the two words of contrast (A and B)
@@ -194,10 +197,8 @@ class SeqRec():
                 os.makedirs("SeqRec_master/audio_stims/" + contrast[1] + "_B/")
                 
             # Tell the experimenter to put the audio files in folders
-            self.display_prompt("ERROR: Put audio files in correct folders", 
-                                displayTime=100)
-            self.display_prompt("Find folders in SeqRec_master/audio_stims/",
-                                displayTime=100)
+            print("ERROR: Put audio files in correct folders")
+            print("Find folders in SeqRec_master/audio_stims/")
             # exit the python interpreter
             sys.exit()
             
@@ -208,13 +209,9 @@ class SeqRec():
                     # if some subfolder is empty
                     if os.listdir("SeqRec_master/audio_stims/"+subfolder)==[]:
                         # display error
-                        self.display_prompt("ERROR: Please put audio files" + 
-                                        "in correct folders", displayTime=100)
-                        self.display_prompt("At least one subfolder is empty", 
-                                            displayTime=100)
-                        self.display_prompt(("Find folders here >>> " + 
-                                             str("SeqRec_master/audio_stims/")),
-                                            displayTime=100)
+                        print("ERROR: Put audio files in correct folders")
+                        print("At least one subfolder is empty")
+                        print("Folders here >>> SeqRec_master/audio_stims/")
                         sys.exit()
 
                         
